@@ -181,13 +181,18 @@ if [ -z "$COMMITS_TO_PROCESS" ]; then
 fi
 
 echo "[+] Adding git commit"
-# Cherry-pick the commits one by one with adjusted commit times
-for COMMIT in $COMMITS_TO_PROCESS; do
-    RANDOM_COMMIT_DATE=$(generate_random_time)
-    GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick $COMMIT --no-commit
-    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --amend --allow-empty
-    echo $COMMIT > "$STATE_FILE"
-done
+	# Cherry-pick the commits one by one with adjusted commit times
+	for COMMIT in $COMMITS_TO_PROCESS; do
+			RANDOM_COMMIT_DATE=$(generate_random_time)
+			
+			# Use environment variables for commit author and committer dates
+			GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit $COMMIT
+			
+			# Now commit with the adjusted dates
+			GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
+			
+			echo $COMMIT > "$STATE_FILE"
+	done
 
 echo "[+] git status:"
 git status
