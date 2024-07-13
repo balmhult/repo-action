@@ -173,7 +173,16 @@ else
     LAST_PROCESSED_COMMIT=""
 fi
 
-COMMITS_TO_PROCESS=$(cd "$SOURCE_DIRECTORY" && git log --format="%H" --reverse --no-merges "$LAST_PROCESSED_COMMIT"..HEAD | head -n 3)
+echo "Last processed commit: $LAST_PROCESSED_COMMIT"
+
+# If LAST_PROCESSED_COMMIT is empty, get all commits from the beginning
+if [ -z "$LAST_PROCESSED_COMMIT" ]; then
+    COMMITS_TO_PROCESS=$(cd "$SOURCE_DIRECTORY" && git log --format="%H" --reverse --no-merges | head -n 3)
+else
+    COMMITS_TO_PROCESS=$(cd "$SOURCE_DIRECTORY" && git log --format="%H" --reverse --no-merges "$LAST_PROCESSED_COMMIT"..HEAD | head -n 3)
+fi
+
+echo "Commits to process: $COMMITS_TO_PROCESS"
 
 if [ -z "$COMMITS_TO_PROCESS" ]; then
     echo "No new commits to process."
