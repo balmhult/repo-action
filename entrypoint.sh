@@ -160,10 +160,12 @@ fi
 
 # Function to generate a random time between the last hour and now
 generate_random_time() {
-    local START_TIME=$(date --date='1 hour ago' +%s)
     local END_TIME=$(date +%s)
-    local RANDOM_TIME=$((START_TIME + RANDOM % (END_TIME - START_TIME)))
-    date --date="@$RANDOM_TIME" '+%Y-%m-%d %H:%M:%S'
+    local RANGE=$((END_TIME - LAST_COMMIT_TIME))
+    local RANDOM_INCREMENT=$((RANDOM % RANGE + 1))  # Increment between 1 and RANGE seconds
+    LAST_COMMIT_TIME=$((LAST_COMMIT_TIME + RANDOM_INCREMENT))
+    local FORMATTED_DATE=$(date -r "$LAST_COMMIT_TIME" '+%Y-%m-%d %H:%M:%S')
+    echo "$LAST_COMMIT_TIME|$FORMATTED_DATE"
 }
 
 STATE_FILE="$CLONE_DIR/commit_state.txt"
@@ -190,18 +192,24 @@ if [ -z "$COMMITS_TO_PROCESS" ]; then
 fi
 
 echo "[+] Adding git commit"
-	# Cherry-pick the commits one by one with adjusted commit times
-	for COMMIT in $COMMITS_TO_PROCESS; do
-			RANDOM_COMMIT_DATE=$(generate_random_time)
-			
-			# Use environment variables for commit author and committer dates
-			GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit $COMMIT
-			
-			# Now commit with the adjusted dates
-			GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
-			
-			echo $COMMIT > "$STATE_FILE"
-	done
+LAST_COMMIT_TIME=$(date -v -1H +%s)
+# Cherry-pick the commits one by one with adjusted commit times
+for COMMIT in $COMMITS_TO_PROCESS; do
+		result=$(generate_random_time)
+		LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
+		RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
+		
+		# Use environment variables for commit author and committer dates
+		GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit $COMMIT
+		
+		# Now commit with the adjusted dates
+		GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
+		
+		echo $COMMIT > "$STATE_FILE"
+		
+		# Update LAST_COMMIT_TIME for the next iteration
+		LAST_COMMIT_TIME=$(date -j -f "%Y-%m-%d %H:%M:%S" "$RANDOM_COMMIT_DATE" +%s)
+done
 
 echo "[+] git status:"
 git status
