@@ -192,34 +192,28 @@ if [ -z "$COMMITS_TO_PROCESS" ]; then
 fi
 
 echo "[+] Adding git commit"
-LAST_COMMIT_TIME=$(date -v -1H +%s)
+LAST_COMMIT_TIME=$(date -u -v -1H +%s)
 # Cherry-pick the commits one by one with adjusted commit times
 for COMMIT in $COMMITS_TO_PROCESS; do
-		result=$(generate_random_time)
-		LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
-		RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
-		
-		# Use environment variables for commit author and committer dates
-		GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit $COMMIT
-		
-		# Now commit with the adjusted dates
-		GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
-		
-		echo $COMMIT > "$STATE_FILE"
-		
-		# Update LAST_COMMIT_TIME for the next iteration
-		LAST_COMMIT_TIME=$(date -j -f "%Y-%m-%d %H:%M:%S" "$RANDOM_COMMIT_DATE" +%s)
+    result=$(generate_random_time)
+    LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
+    RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
+    
+    echo "Processing commit $COMMIT with date $RANDOM_COMMIT_DATE"
+
+    # Use environment variables for commit author and committer dates
+    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit "$COMMIT"
+
+    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
+    
+    echo "$COMMIT" > "$STATE_FILE"
 done
 
 echo "[+] git status:"
 git status
 
-# echo "[+] git diff-index:"
-# # git diff-index : to avoid doing the git commit failing if there are no changes to be commit
-# git diff-index --quiet HEAD || git commit --message "$COMMIT_MESSAGE"
-
-echo "[+] Pushing git commit"
-# --set-upstream: sets de branch when pushing to a branch that does not exist
+# Push the commits
+echo "[+] Pushing git commits"
 git push "$GIT_CMD_REPOSITORY" --set-upstream "$TARGET_BRANCH"
 
 echo "[+] Action end"
