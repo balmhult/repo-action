@@ -192,7 +192,7 @@ if [ -z "$COMMITS_TO_PROCESS" ]; then
 fi
 
 echo "[+] Adding git commit"
-LAST_COMMIT_TIME=$(date -u -d '1 hour ago' +%s)
+LAST_COMMIT_TIME=$(( $(date +%s) - 3600 ))
 # Cherry-pick the commits one by one with adjusted commit times
 for COMMIT in $COMMITS_TO_PROCESS; do
     result=$(generate_random_time)
