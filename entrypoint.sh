@@ -166,12 +166,27 @@ generate_random_time() {
     date --date="@$RANDOM_TIME" '+%Y-%m-%d %H:%M:%S'
 }
 
+STATE_FILE="$CLONE_DIR/commit_state.txt"
+if [ -f "$STATE_FILE" ]; then
+    LAST_PROCESSED_COMMIT=$(cat "$STATE_FILE")
+else
+    LAST_PROCESSED_COMMIT=""
+fi
+
+COMMITS_TO_PROCESS=$(cd "$SOURCE_DIRECTORY" && git log --format="%H" --reverse --no-merges "$LAST_PROCESSED_COMMIT"..HEAD | head -n 3)
+
+if [ -z "$COMMITS_TO_PROCESS" ]; then
+    echo "No new commits to process."
+    exit 0
+fi
+
 echo "[+] Adding git commit"
 # Cherry-pick the commits one by one with adjusted commit times
-for COMMIT in $(git log --format="%H" -n $NUM_COMMITS); do
+for COMMIT in $COMMITS_TO_PROCESS; do
     RANDOM_COMMIT_DATE=$(generate_random_time)
     GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick $COMMIT --no-commit
     GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --amend --allow-empty
+    echo $COMMIT > "$STATE_FILE"
 done
 
 echo "[+] git status:"
