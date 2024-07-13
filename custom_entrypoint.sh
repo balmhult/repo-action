@@ -55,7 +55,6 @@ else
 	exit 1
 fi
 
-
 CLONE_DIR=$(mktemp -d)
 
 echo "[+] Git version"
@@ -90,7 +89,6 @@ git config --global http.version HTTP/1.1
 	echo "::error::(Note that if they exist USER_NAME and API_TOKEN is redacted by GitHub)"
 	echo "::error::Please verify that the target repository exist AND that it contains the destination branch name, and is accesible by the API_TOKEN_GITHUB OR SSH_DEPLOY_KEY"
 	exit 1
-
 }
 ls -la "$CLONE_DIR"
 
@@ -160,8 +158,36 @@ then
     git switch -c "$TARGET_BRANCH" || true
 fi
 
+# Function to generate a random time between the last hour and now
+generate_random_time() {
+    local START_TIME=$(date --date='1 hour ago' +%s)
+    local END_TIME=$(date +%s)
+    local RANDOM_TIME=$((START_TIME + RANDOM % (END_TIME - START_TIME)))
+    date --date="@$RANDOM_TIME" '+%Y-%m-%d %H:%M:%S'
+}
+
+STATE_FILE="$CLONE_DIR/commit_state.txt"
+if [ -f "$STATE_FILE" ]; then
+    LAST_PROCESSED_COMMIT=$(cat "$STATE_FILE")
+else
+    LAST_PROCESSED_COMMIT=""
+fi
+
+COMMITS_TO_PROCESS=$(cd "$SOURCE_DIRECTORY" && git log --format="%H" --reverse --no-merges "$LAST_PROCESSED_COMMIT"..HEAD | head -n 3)
+
+if [ -z "$COMMITS_TO_PROCESS" ]; then
+    echo "No new commits to process."
+    exit 0
+fi
+
 echo "[+] Adding git commit"
-git add .
+# Cherry-pick the commits one by one with adjusted commit times
+for COMMIT in $COMMITS_TO_PROCESS; do
+    RANDOM_COMMIT_DATE=$(generate_random_time)
+    GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick $COMMIT --no-commit
+    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --amend --allow-empty
+    echo $COMMIT > "$STATE_FILE"
+done
 
 echo "[+] git status:"
 git status
@@ -173,3 +199,5 @@ git diff-index --quiet HEAD || git commit --message "$COMMIT_MESSAGE"
 echo "[+] Pushing git commit"
 # --set-upstream: sets de branch when pushing to a branch that does not exist
 git push "$GIT_CMD_REPOSITORY" --set-upstream "$TARGET_BRANCH"
+
+echo "[+] Action end"
