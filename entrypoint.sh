@@ -158,16 +158,6 @@ then
     git switch -c "$TARGET_BRANCH" || true
 fi
 
-# Function to generate a random time between the last hour and now
-generate_random_time() {
-    local END_TIME=$(date +%s)
-    local RANGE=$((END_TIME - LAST_COMMIT_TIME))
-    local RANDOM_INCREMENT=$((RANDOM % RANGE + 1))  # Increment between 1 and RANGE seconds
-    LAST_COMMIT_TIME=$((LAST_COMMIT_TIME + RANDOM_INCREMENT))
-    local FORMATTED_DATE=$(date -u -d "@$LAST_COMMIT_TIME" '+%Y-%m-%d %H:%M:%S')
-    echo "$LAST_COMMIT_TIME|$FORMATTED_DATE"
-}
-
 # Save commit state in the source repository
 SOURCE_COMMIT_STATE_FILE="$SOURCE_DIRECTORY/commit_state.txt"
 
@@ -198,8 +188,19 @@ if [ -z "$COMMITS_TO_PROCESS" ]; then
 fi
 
 echo "[+] Adding git commit"
+
 # Calculate the timestamp for one hour ago
 LAST_COMMIT_TIME=$(( $(date +%s) - 3600 ))
+
+# Function to generate a random time between the last hour and now
+generate_random_time() {
+    local END_TIME=$(date +%s)
+    local RANGE=$((END_TIME - LAST_COMMIT_TIME))
+    local RANDOM_INCREMENT=$((RANDOM % RANGE + 1))  # Increment between 1 and RANGE seconds
+    LAST_COMMIT_TIME=$((LAST_COMMIT_TIME + RANDOM_INCREMENT))
+    local FORMATTED_DATE=$(date -r "$LAST_COMMIT_TIME" '+%Y-%m-%d %H:%M:%S')
+    echo "$LAST_COMMIT_TIME|$FORMATTED_DATE"
+}
 
 # Cherry-pick the commits one by one with adjusted commit times
 for COMMIT in $(echo "$COMMITS_TO_PROCESS"); do
