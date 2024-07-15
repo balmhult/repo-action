@@ -167,10 +167,12 @@ generate_random_time() {
     local FORMATTED_DATE=$(date -r "$LAST_COMMIT_TIME" '+%Y-%m-%d %H:%M:%S')
     echo "$LAST_COMMIT_TIME|$FORMATTED_DATE"
 }
+# Save commit state in the source repository
+SOURCE_COMMIT_STATE_FILE="$SOURCE_DIRECTORY/commit_state.txt"
 
-STATE_FILE="$CLONE_DIR/commit_state.txt"
-if [ -f "$STATE_FILE" ]; then
-    LAST_PROCESSED_COMMIT=$(cat "$STATE_FILE")
+# If commit_state.txt file exists in the source directory, read the last processed commit
+if [ -f "$SOURCE_COMMIT_STATE_FILE" ]; then
+    LAST_PROCESSED_COMMIT=$(cat "$SOURCE_COMMIT_STATE_FILE")
 else
     LAST_PROCESSED_COMMIT=""
 fi
@@ -188,14 +190,17 @@ fi
 echo "Commits to process:"
 echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'
 
+# Ensure the commits are processed correctly
 if [ -z "$COMMITS_TO_PROCESS" ]; then
     echo "No new commits to process."
     exit 0
 fi
 
 echo "[+] Adding git commit"
-# Cherry-pick the commits one by one with adjusted commit times
+# Calculate the timestamp for one hour ago
 LAST_COMMIT_TIME=$(( $(date +%s) - 3600 ))
+
+# Cherry-pick the commits one by one with adjusted commit times
 for COMMIT in $(echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'); do
     result=$(generate_random_time)
     LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
@@ -209,11 +214,15 @@ for COMMIT in $(echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'); do
     # Now commit with the adjusted dates
     GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
     
-    echo "$COMMIT" > "$STATE_FILE"
+    echo "$COMMIT" > "$SOURCE_COMMIT_STATE_FILE"
 done
 
 echo "[+] git status:"
 git status
+
+# Exclude the .git folder from being copied
+echo "[+] Excluding .git folder from being committed"
+rm -rf "$CLONE_DIR/.git"
 
 # Push the commits
 echo "[+] Pushing git commits"
