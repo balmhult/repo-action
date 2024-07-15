@@ -184,7 +184,9 @@ else
     COMMITS_TO_PROCESS=$(cd "$SOURCE_DIRECTORY" && git log --format="%H" --reverse --no-merges "$LAST_PROCESSED_COMMIT"..HEAD | head -n 3)
 fi
 
-echo "Commits to process: $COMMITS_TO_PROCESS"
+# Debugging output to check the commits being processed
+echo "Commits to process:"
+echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'
 
 if [ -z "$COMMITS_TO_PROCESS" ]; then
     echo "No new commits to process."
@@ -192,18 +194,19 @@ if [ -z "$COMMITS_TO_PROCESS" ]; then
 fi
 
 echo "[+] Adding git commit"
-LAST_COMMIT_TIME=$(( $(date +%s) - 3600 ))
 # Cherry-pick the commits one by one with adjusted commit times
-for COMMIT in $COMMITS_TO_PROCESS; do
+LAST_COMMIT_TIME=$(( $(date +%s) - 3600 ))
+for COMMIT in $(echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'); do
     result=$(generate_random_time)
     LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
     RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
-    
+
     echo "Processing commit $COMMIT with date $RANDOM_COMMIT_DATE"
 
     # Use environment variables for commit author and committer dates
     GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit "$COMMIT"
-
+    
+    # Now commit with the adjusted dates
     GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
     
     echo "$COMMIT" > "$STATE_FILE"
