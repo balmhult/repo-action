@@ -233,6 +233,8 @@ rm -rf "$CLONE_DIR/.github"
 
 # Add all changes
 git add -A
+git commit -m "Update commit state"
+git push origin "$TARGET_BRANCH"
 
 # Push the commits
 echo "[+] Pushing git commits"
