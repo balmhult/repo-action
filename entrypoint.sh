@@ -164,7 +164,7 @@ generate_random_time() {
     local RANGE=$((END_TIME - LAST_COMMIT_TIME))
     local RANDOM_INCREMENT=$((RANDOM % RANGE + 1))  # Increment between 1 and RANGE seconds
     LAST_COMMIT_TIME=$((LAST_COMMIT_TIME + RANDOM_INCREMENT))
-    local FORMATTED_DATE=$(date -r "$LAST_COMMIT_TIME" '+%Y-%m-%d %H:%M:%S')
+    local FORMATTED_DATE=$(date -u -d "@$LAST_COMMIT_TIME" '+%Y-%m-%d %H:%M:%S')
     echo "$LAST_COMMIT_TIME|$FORMATTED_DATE"
 }
 
@@ -189,7 +189,7 @@ fi
 
 # Debugging output to check the commits being processed
 echo "Commits to process:"
-echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'
+echo "$COMMITS_TO_PROCESS" | tr '\n' ' '
 
 # Ensure the commits are processed correctly
 if [ -z "$COMMITS_TO_PROCESS" ]; then
@@ -202,7 +202,7 @@ echo "[+] Adding git commit"
 LAST_COMMIT_TIME=$(( $(date +%s) - 3600 ))
 
 # Cherry-pick the commits one by one with adjusted commit times
-for COMMIT in $(echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'); do
+for COMMIT in $(echo "$COMMITS_TO_PROCESS"); do
     result=$(generate_random_time)
     LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
     RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
