@@ -167,6 +167,7 @@ generate_random_time() {
     local FORMATTED_DATE=$(date -r "$LAST_COMMIT_TIME" '+%Y-%m-%d %H:%M:%S')
     echo "$LAST_COMMIT_TIME|$FORMATTED_DATE"
 }
+
 # Save commit state in the source repository
 SOURCE_COMMIT_STATE_FILE="$SOURCE_DIRECTORY/commit_state.txt"
 
@@ -211,6 +212,11 @@ for COMMIT in $(echo "$COMMITS_TO_PROCESS" | tr ' ' '\n'); do
     # Use environment variables for commit author and committer dates
     GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit "$COMMIT"
     
+    # Reset changes to the .github folder to exclude them from the commit
+    git reset HEAD .github/
+    git restore --staged .github/
+    git restore .github/
+
     # Now commit with the adjusted dates
     GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
     
@@ -220,9 +226,12 @@ done
 echo "[+] git status:"
 git status
 
-# Exclude the .git folder from being copied
+# Exclude the .github folder from being copied
 echo "[+] Excluding .github folder from being committed"
 rm -rf "$CLONE_DIR/.github"
+
+# Add all changes
+git add -A
 
 # Push the commits
 echo "[+] Pushing git commits"
