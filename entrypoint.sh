@@ -221,8 +221,8 @@ echo "[+] git status:"
 git status
 
 # Exclude the .git folder from being copied
-echo "[+] Excluding .git folder from being committed"
-rm -rf "$CLONE_DIR/.git"
+echo "[+] Excluding .github folder from being committed"
+rm -rf "$CLONE_DIR/.github"
 
 # Push the commits
 echo "[+] Pushing git commits"
