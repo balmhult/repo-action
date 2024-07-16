@@ -87,7 +87,7 @@ git config --global http.version HTTP/1.1
 	echo "::error::Could not clone the destination repository. Command:"
 	echo "::error::git clone --single-branch --branch $TARGET_BRANCH $GIT_CMD_REPOSITORY $CLONE_DIR"
 	echo "::error::(Note that if they exist USER_NAME and API_TOKEN is redacted by GitHub)"
-	echo "::error::Please verify that the target repository exist AND that it contains the destination branch name, and is accesible by the API_TOKEN_GITHUB OR SSH_DEPLOY_KEY"
+	echo "::error::Please verify that the target repository exist AND that it contains the destination branch name, and is accessible by the API_TOKEN_GITHUB OR SSH_DEPLOY_KEY"
 	exit 1
 }
 ls -la "$CLONE_DIR"
@@ -118,7 +118,7 @@ mv "$TEMP_DIR/.git" "$CLONE_DIR/.git"
 echo "[+] List contents of $SOURCE_DIRECTORY"
 ls "$SOURCE_DIRECTORY"
 
-echo "[+] Checking if local $SOURCE_DIRECTORY exist"
+echo "[+] Checking if local $SOURCE_DIRECTORY exists"
 if [ ! -d "$SOURCE_DIRECTORY" ]
 then
 	echo "ERROR: $SOURCE_DIRECTORY does not exist"
@@ -126,7 +126,7 @@ then
 	echo
 	echo "In the example it is created by ./build.sh: https://github.com/cpina/push-to-another-repository-example/blob/main/.github/workflows/ci.yml#L19"
 	echo
-	echo "If you want to copy a directory that exist in the source repository"
+	echo "If you want to copy a directory that exists in the source repository"
 	echo "to the target repository: you need to clone the source repository"
 	echo "in a previous step in the same build section. For example using"
 	echo "actions/checkout@v2. See: https://github.com/cpina/push-to-another-repository-example/blob/main/.github/workflows/ci.yml#L16"
@@ -206,7 +206,7 @@ generate_random_time() {
 for COMMIT in $(echo "$COMMITS_TO_PROCESS"); do
     result=$(generate_random_time)
     LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
-    RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
+			RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
 
     echo "Processing commit $COMMIT with date $RANDOM_COMMIT_DATE"
 
@@ -218,9 +218,10 @@ for COMMIT in $(echo "$COMMITS_TO_PROCESS"); do
     git restore --staged .github/
     git restore .github/
 
-    # Now commit with the adjusted dates
-    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git commit --no-edit --allow-empty
+    # Now commit with the adjusted dates and new author details
+    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" GIT_AUTHOR_NAME="$USER_NAME" GIT_AUTHOR_EMAIL="$USER_EMAIL" git commit --no-edit --allow-empty
     
+    # Update the commit state
     echo "$COMMIT" > "$SOURCE_COMMIT_STATE_FILE"
 done
 
@@ -233,7 +234,7 @@ rm -rf "$CLONE_DIR/.github"
 
 # Add all changes
 git add -A
-git commit -m "Update commit state"
+git commit -m "$COMMIT_MESSAGE"
 git push origin "$TARGET_BRANCH"
 
 # Push the commits
