@@ -206,21 +206,21 @@ generate_random_time() {
 for COMMIT in $(echo "$COMMITS_TO_PROCESS"); do
     result=$(generate_random_time)
     LAST_COMMIT_TIME=$(echo "$result" | cut -d '|' -f 1)
-		RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
+    RANDOM_COMMIT_DATE=$(echo "$result" | cut -d '|' -f 2)
 
     echo "Processing commit $COMMIT with date $RANDOM_COMMIT_DATE"
 
     # Use environment variables for commit author and committer dates
-    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick --no-commit "$COMMIT"
-    
-    # Reset changes to the .github folder to exclude them from the commit
-    # git reset HEAD .github/
-    # git restore --staged .github/
-    # git restore .github/
+    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick "$COMMIT"
 
-    # Now commit with the adjusted dates and new author details
-    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" GIT_AUTHOR_NAME="$USER_NAME" GIT_AUTHOR_EMAIL="$USER_EMAIL" git commit --no-edit --allow-empty
-    
+    # Reset changes to the .github folder to exclude them from the commit
+    git reset HEAD .github/ || true
+    git restore --staged .github/ || true
+    git restore .github/ || true
+
+    # Amend the commit to exclude .github folder and set the commit date
+    git commit --amend --no-edit --date "$RANDOM_COMMIT_DATE" --author="$USER_NAME <$USER_EMAIL>"
+
     # Update the commit state
     echo "$COMMIT" > "$SOURCE_COMMIT_STATE_FILE"
 done
