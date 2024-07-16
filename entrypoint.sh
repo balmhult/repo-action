@@ -214,9 +214,10 @@ for COMMIT in $(echo "$COMMITS_TO_PROCESS"); do
     GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick "$COMMIT" || {
         echo "Cherry-pick failed, attempting to resolve conflicts..."
 
-        # # Stage all changes (skip .github)
-        # git add -A
-
+        # Stage all changes except the .github folder
+        git add -A
+        git reset .github/ || true
+        
         # Continue the cherry-pick operation after resolving conflicts
         git cherry-pick --continue || {
             echo "Conflict resolution failed, skipping commit..."
