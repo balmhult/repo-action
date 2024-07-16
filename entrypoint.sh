@@ -211,26 +211,14 @@ for COMMIT in $(echo "$COMMITS_TO_PROCESS"); do
     echo "Processing commit $COMMIT with date $RANDOM_COMMIT_DATE"
 
     # Use environment variables for commit author and committer dates
-    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick "$COMMIT" || {
-        echo "Cherry-pick failed, attempting to resolve conflicts..."
-        
-        # Reset changes to the .github folder to exclude them from the commit
-        git reset HEAD .github/ || true
-        git restore --staged .github/ || true
-        git restore .github/ || true
-        
-        # Add all changes except the .github folder
-        git add -A :!github
-        
-        # Continue the cherry-pick operation after resolving conflicts
-        git cherry-pick --continue || {
-            echo "Conflict resolution failed, skipping commit..."
-            git cherry-pick --skip
-            continue
-        }
-    }
+    GIT_AUTHOR_DATE="$RANDOM_COMMIT_DATE" GIT_COMMITTER_DATE="$RANDOM_COMMIT_DATE" git cherry-pick "$COMMIT"
 
-    # Amend the commit to set the commit date and author information
+    # Reset changes to the .github folder to exclude them from the commit
+    # git reset HEAD .github/ || true
+    # git restore --staged .github/ || true
+    # git restore .github/ || true
+
+    # Amend the commit to exclude .github folder and set the commit date
     git commit --amend --no-edit --date "$RANDOM_COMMIT_DATE" --author="$USER_NAME <$USER_EMAIL>"
 
     # Update the commit state
